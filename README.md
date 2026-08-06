@@ -19,3 +19,9 @@ To play Stria, move the faders in the assigned. The following logic applies: Sta
 It has been tested with Korg nanoKontrol2 with MIDI-CCs 0-7.
 
 (A corresponding Max Patch can be found on Dustins Github: https://github.com/nitsudnorz/StriaFaderpatch.)
+
+## Acknowledgements
+This research was funded in whole by the Austrian Science Fund (FWF) [10.55776/AR743].
+
+## License
+Distributed under the GNU Lesser General Public License v2.1.
