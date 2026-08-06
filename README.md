@@ -1,15 +1,13 @@
 # stria_live_electronics
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; Stria
-;;; by John Chowning
-;;; This code is based on the Reconstruction - ORChestra csound code
-;;; (https://github.com/TheSoundOfAIOSR/csound-web/blob/main/stria.csd)
-;;; by Kevin Dahan 2007-20010
-;;; kevin.dahan@wanadoo.fr
-;;; translated to PD for live-performance by Dustin Zorn (https://github.com/nitsudnorz)
-;;; performance score generator in R-Statistics developed by Dustin Zorn and Alex Hofmann
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+Performance Material to live perform: Stria by John Chowning
+This code is based on the Reconstruction - ORChestra csound code
+(https://github.com/TheSoundOfAIOSR/csound-web/blob/main/stria.csd)
+by Kevin Dahan 2007-20010
+kevin.dahan@wanadoo.fr
+translated to PD for live-performance by Dustin Zorn (https://github.com/nitsudnorz)
+performance score generator in R-Statistics developed by Dustin Zorn and Alex Hofmann
+
 
 
 This PD patch is designed to play Stria by John Chowning, as a duet live-electronics performance using two MIDI controllers with faders. It is based on Kevin Dahan's reconstruction of Stria in Csound. Stria contains 383 FM sound events. In this patch, these events can be assigned to a fader either as a group or as individual events.
@@ -20,7 +18,7 @@ It has been tested with Korg nanoKontrol2 with MIDI-CCs 0-7.
 
 (A corresponding Max Patch can be found on Dustins Github: https://github.com/nitsudnorz/StriaFaderpatch.)
 
-## Usage
+## Usage (to play Stria with the Pure Data Patch)
 - go into patches/PD/SRIA_PD/
 - open Striaport_CsoundtoPD.pd
 - PD>Media->MIDI Settings - select your MIDI controllers
