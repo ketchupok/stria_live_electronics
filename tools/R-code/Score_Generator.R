@@ -22,7 +22,7 @@ stria_score <- read.csv(path, sep = ",", dec = ".") # load original Csound score
 stria_score$End = stria_score$Start+stria_score$Dur # calc ends of events
 col_scale_fact = 1.0/max(stria_score$Freq[1:383]) # scaling factors for score display
 Amp_scale_fact = 0.5/max(stria_score$Amp[1:383]) #
-number_distance = 1.4
+number_distance = 1.2
 quartzFonts(avenir = c("Avenir Book", "Avenir Black", "Avenir Book Oblique", "Avenir Black Oblique"))
 par(family = 'avenir')
 
@@ -119,7 +119,7 @@ rect(par("usr")[1], par("usr")[3],
      par("usr")[2], par("usr")[4],
      col = bg_color) # Color
 
-axis(side = 2, las = 2, mgp = c(3, 0.75, 0), at = y, tick = FALSE) ## Rotated labels for MIDICC-Num
+axis(side = 2, las = 2, mgp = c(3, 0.75, 0), at = y, labels = y%%4 +1 , tick = FALSE) ## Rotated labels for MIDICC-Num
 box(lty = 'dashed', col = 'grey')
     for (k in stria_score$Event_num) { # k event number, that refers to the line in full sheet
       if (!is.na(k) && stria_score$MidiFaderCC[k] == y){
@@ -153,10 +153,12 @@ drawpage <- function (nr,beg, end)
   for (fader_CC in 7:0){
   	drawfader(fader_CC, beg, end)
     }
-   mtext("'Stria' by John Chowning: A Performancescore", side = 3, line = 55, cex = 0.5)  # Add Titel
+   #mtext("'Stria' by John Chowning: A Performance Score", side = 3, line = 55, cex = 0.5)  # Add Titel
    mtext(nr, side = 3, line = 55, cex = 0.5, adj=1)  # Add Pagenumber
-   mtext("        Player 1", line = -15, cex = 0.75, outer = TRUE, adj = 0)
-   mtext("        Player 2", line = -50, cex = 0.75, outer = TRUE, adj = 0)
+   mtext("        Faders", line = -15, cex = 0.75, outer = TRUE, adj = 0)
+   mtext("        Player 1", line = -16, cex = 0.75, outer = TRUE, adj = 0)
+   mtext("        Faders", line = -45, cex = 0.75, outer = TRUE, adj = 0)
+   mtext("        Player 2", line = -46, cex = 0.75, outer = TRUE, adj = 0)
 
 rect(100, 400, 125, 450, col = "green", border = "blue") # coloured
 
