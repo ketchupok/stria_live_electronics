@@ -17,3 +17,5 @@ This PD patch is designed to play Stria by John Chowning, as a duet live-electro
 To play Stria, move the faders in the assigned. The following logic applies: Start at 0 and move the fader, when the maximum is reached, the assigned event(s) will finish. Move the fader back to 0 to reset and play the next event(s).
 
 It has been tested with Korg nanoKontrol2 with MIDI-CCs 0-7.
+
+(A corresponding Max Patch can be found on Dustins Github: https://github.com/nitsudnorz/StriaFaderpatch.)
