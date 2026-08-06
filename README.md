@@ -20,6 +20,14 @@ It has been tested with Korg nanoKontrol2 with MIDI-CCs 0-7.
 
 (A corresponding Max Patch can be found on Dustins Github: https://github.com/nitsudnorz/StriaFaderpatch.)
 
+## Usage
+- go into patches/PD/SRIA_PD/
+- open Striaport_CsoundtoPD.pd
+- PD>Media->MIDI Settings - select your MIDI controllers
+- eventually set your PD->Media->Audio Settings
+- in the patch click on "DSP on/off" to start the patch
+- start moving the faders of you MIDI controllers
+
 ## Acknowledgements
 This research was funded in whole by the Austrian Science Fund (FWF) [10.55776/AR743].
 
