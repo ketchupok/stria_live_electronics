@@ -1,60 +1,118 @@
-# TODO:
-# - correct Axis Labels to CC numbers
-# - events 4-7 are one slot to low
-# - make more beautiful cluster markers
+# This script processes score information of the composition Stria by John Chowning.
+# It creates a) the mapping/assignment files for Pure Data, b) a .pdf file with the performance score and
+# c) a Csound score to test the PureData version and the mappings automatically (this mainy for debugging purposes)
 
+# Settings:
+exportPD = TRUE # export lists with fader assignments for Pure Data Patch
+exportScorePDF = TRUE
+exportMIDITester = TRUE
 
 # set your working directory to the location of this File
+# by double-click opening the file in Finder/Explorer R automatically sets the correct working directory
+# check by executing:
+getwd()
+
+# if this scipt does not run properly, the setting of the working directory may be the problem
 # "your_harddrive_location/stria_live_electronics/tools/R-code"
 
-path <- "../../data/score_as_csv/Stria_score_asNumbers_FaderCC.csv"
-stria_score <- read.csv(path, sep = ",", dec = ".") # load file
 
-stria_score$End = stria_score$Start+stria_score$Dur # calc Ends
-col_scale_fact = 1.0/max(stria_score$Freq[1:383]) # scaling factors
-Amp_scale_fact = 0.5/max(stria_score$Amp[1:383])
-number_distance = 1.4
+path <- "../../data/score_as_csv/Stria_score_asNumbers_FaderCC.csv"
+stria_score <- read.csv(path, sep = ",", dec = ".") # load original Csound score file, including fader assignments by performers
+
+stria_score$End = stria_score$Start+stria_score$Dur # calc ends of events
+col_scale_fact = 1.0/max(stria_score$Freq[1:383]) # scaling factors for score display
+Amp_scale_fact = 0.5/max(stria_score$Amp[1:383]) #
+number_distance = 1.2
 quartzFonts(avenir = c("Avenir Book", "Avenir Black", "Avenir Book Oblique", "Avenir Black Oblique"))
 par(family = 'avenir')
 
 # identify overlapping clusters
-str(stria_score)
-
 stria_score$isCluster <- FALSE
 for (k in stria_score$Event_num) { # k event number, that refers to the line in full sheet
 	if (k > 1 && stria_score$MidiFaderCC[k] == stria_score$MidiFaderCC[k-1])
 	{
-		#print(k)
-		#print("same as last")
 		stria_score$isCluster[k] = TRUE
 	}
 }
 
-#export lists for PD
-for (fader_CC in 0:7){
-	file.create(paste("exportPD/fader",fader_CC,".txt", sep="")) # empty old files
-	lines_in_txt <- list()
-	line_list<-c()
-	events <- stria_score[stria_score$MidiFaderCC==fader_CC, ]
-  	for (e in 1:length(events$isCluster)){
-  		if (events$isCluster[e] == FALSE) { # for each individual event make a new line
-  			if(e > 1){lines_in_txt <- append(lines_in_txt, list(line_list))} # append latest line_list, before making a new one		
-  			line_list <- c(events$Event_num[e])
-  			} else { # if its a cluster, add the other events to the same line
-  			line_list <- c(line_list, events$Event_num[e])
-  			}
-  	}
-	lines_in_txt <- append(lines_in_txt, list(line_list)) # append very latest line_list
-	lapply(lines_in_txt, cat, "; \n", file=paste("exportPD/fader",fader_CC,".txt", sep=""), append=TRUE) # write line by line
+# calculate Cluster duration
+clustCount = 0
+stria_score$clustNum <- NA
+stria_score$fullClust <- stria_score$isCluster
+
+# mark complete Cluster (also with first event)
+for (i in stria_score$Event_num) {
+	if (stria_score$isCluster[i] == TRUE) {
+		stria_score$clustNum[i] <- clustCount
+		stria_score$clustNum[i-1] <- clustCount
+		stria_score$fullClust[i-1] <- TRUE
+		}
+	else {
+		clustCount = clustCount + 1
+		stria_score$clustNum[i] <- clustCount
+
+		}
 }
+
+# calc maxEnd pro clustNum, as earlier events can be longer than last event.
+	stria_score$clustNumF <- as.factor(stria_score$clustNum)
+	clustEnds <- by(stria_score$End, stria_score$clustNumF,  FUN=max)
+
+# calc cluster End
+for (i in stria_score$Event_num) {
+	stria_score$clustEnd[i] <- clustEnds[stria_score$clustNum[i]]
+	}
+
+# calc cluster duration, from first event to End of Cluster
+stria_score$clustDur <- NA
+for (i in stria_score$Event_num) {
+	if (stria_score$isCluster[i] == FALSE) {
+			stria_score$clustDur[i] <- stria_score$clustEnd[i] - stria_score$Start[i]
+	}
+}
+
+# for plotting in score, make list with only cluster durations
+stria_score$clustDurOnly <- NA
+for (i in stria_score$Event_num) {
+	if (stria_score$fullClust[i] == TRUE) {
+			stria_score$clustDurOnly[i] <-  stria_score$clustDur[i]
+	}
+}
+
+
+#    **** Export fader assignment lists for PD. ****
+#
+
+if (exportPD){
+	for (fader_CC in 0:7){
+		file.create(paste("../../patches/PD/STRIA_PD/faderAssigns/fader",fader_CC,".txt", sep="")) # empty old files
+		lines_in_txt <- list()
+		line_list<-c()
+		events <- stria_score[stria_score$MidiFaderCC==fader_CC, ]
+	  	for (e in 1:length(events$isCluster)){
+	  		if (events$isCluster[e] == FALSE) { # for each individual event make a new line
+	  			if(e > 1){lines_in_txt <- append(lines_in_txt, list(line_list))} # append latest line_list, before making a new one
+	  			line_list <- c(events$Event_num[e])
+	  			} else { # if its a cluster, add the other events to the same line
+	  			line_list <- c(line_list, events$Event_num[e])
+	  			}
+	  	}
+		lines_in_txt <- append(lines_in_txt, list(line_list)) # append very latest line_list
+		lapply(lines_in_txt, cat, "; \n", file=paste("../../patches/PD/STRIA_PD/faderAssigns/fader",fader_CC,".txt", sep=""), append=TRUE) # write line by line
+	}
+}
+
+
+#    **** Create Performance Score as pdf. ****
+#
 
 
 # shapes of Buffers # todo check these hardcoded numbers!
 getx <- function (x)
 {
-  switch(x, 
+  switch(x,
          {},
-         {xx <- c(0, 4096, 8192, 12288, 16384, 0)}, 
+         {xx <- c(0, 4096, 8192, 12288, 16384, 0)},
          {xx <- c(0, 2094, 5246, 12620, 13913, 16384, 0)},
          {xx <- c(0, 1500, 2500, 3220, 4220, 5464, 16384, 0)},
          {xx <- c(0, 2525, 5990, 9994, 11345, 16384, 0)},
@@ -66,7 +124,7 @@ getx <- function (x)
 
 gety <- function (y)
 {
-  switch(y, 
+  switch(y,
          {},
          {yy <- c(0, 0.33,  1,  0.33, 0, 0)},
          {yy <- c(1, 0.543, 0.367, 0.2037, 0.0845, 0, 0)},
@@ -85,105 +143,132 @@ f <- function (l, r , x, y, a, o, c)# left right start, end, amplitude, offset=f
 }
 
 
-#x="Fader Pl 1"
-plotter <- function(start, end){
-  plot(x = 1,  
-       xlab = "", # axis lable 
+drawfader <- function(y, beg, end){ # input is fader number
+	  plot(y,
+       xlab = "", # axis label
        ylab = "",
-       xlim = c(start, end), 
-       ylim = c(0, 10), # axis size
+       xlim = c(beg, end),
+       ylim = c(y-1,y+1), # axis size
        xaxs = "i",
        yaxs = "i",
        main = "",
        type = "n",
        yaxt = "n",
-       xaxt = "n")
-  
-  axis(2, at = c( 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5), las = 2, labels = c("", "1", "", "2", "", "3", "", "4", "", "", "1", "", "2", "", "3", "", "4"), tick = FALSE)
-  
-  fader_lines <- c(1, 2, 3, 4, 6, 7, 8, 9)
-  abline(h = fader_lines, col = "grey", lty = "dashed")
-  abline(h = 5, col = "black")
-  mtext("Fbank1",                     # Add title manually
-        side = 2,
-        line = 2,
-        las = 2,
-        at = 3,
-        cex = 0.8,
-        font = 3)
-  mtext("Fbank2",                     # Add title manually
-        side = 2,
-        line = 2,
-        las = 2,
-        at = 8,
-        cex = 0.8,
-        font = 3)
-  
-  #steps = c(0:95)*10
-  #for (l in steps){
-  #  abline(v = steps, col = "grey", lty = "dashed")
-  #	}
-}
+       xaxt = "n",
+       lty = 2,
+       fg = gray(0.7),
+       axes = FALSE
+       )
+       # Change the plot region color
+       bg_color <- ifelse(y>3, 0, "#f7f7f7")
+rect(par("usr")[1], par("usr")[3],
+     par("usr")[2], par("usr")[4],
+     col = bg_color) # Color
 
-
-
-drawfader <- function (y){ # input is fader number
+axis(side = 2, las = 2, mgp = c(3, 0.75, 0), at = y, labels = y%%4 +1 , tick = FALSE) ## Rotated labels for MIDICC-Num
+box(lty = 'dashed', col = 'grey')
     for (k in stria_score$Event_num) { # k event number, that refers to the line in full sheet
       if (!is.na(k) && stria_score$MidiFaderCC[k] == y){
-        #segments(stria_score$Start[k], y+stria_score$Freq[k]*0.0001, stria_score$End[k], y+stria_score$Freq[k]*0.0001) # 
+        #segments(stria_score$Start[k], y, stria_score$End[k], y) # simple lines, for testing
         col_r <- col_scale_fact*stria_score$Freq[k]
-        f(stria_score$ampF[k],stria_score$IAF[k] ,stria_score$Start[k], stria_score$End[k], stria_score$Amp[k]*Amp_scale_fact, y+1+(12*log2(stria_score$Freq[k]/440)+69)*0.005, col_r)
-       if(!stria_score$isCluster[k]) { # event is in cluster, omit event number
+        f(stria_score$ampF[k],stria_score$IAF[k], stria_score$Start[k],
+        	stria_score$End[k], stria_score$Amp[k]*Amp_scale_fact,
+        	y+(12*log2(stria_score$Freq[k]/440)+69)*0.005,
+        	col_r)
+       if(!stria_score$isCluster[k]) { # event is not in cluster, print event number
 	        text(stria_score$Start[k]-number_distance,
-	             y+1+(12*log2(stria_score$Freq[k]/440)+69)*0.005,
+	             y+(12*log2(stria_score$Freq[k]/440)+69)*0.005,
 	             labels = k, cex = 1.5)
+	        #text(stria_score$Start[k] + stria_score$Dur[k]*0.5,		# event length
+	        #     y+(12*log2(stria_score$Freq[k]/440)+69)*0.005,
+	        #     labels = paste(round(stria_score$Dur[k], 0), "s"), cex = 1.5, col = "white")
+	        
+	        if (!stria_score$isCluster[k%%383+1]) {			# also dont label the first event of a cluster with time information
+	        		segments(stria_score$Start[k] + (stria_score$Dur[k]/2 - 0.8), # gray background for event duration text
+	        			y+(12*log2(stria_score$Freq[k]/440)+69)*0.005, 
+	        			stria_score$Start[k] + (stria_score$Dur[k]/2 + 0.8), 
+	        			y+(12*log2(stria_score$Freq[k]/440)+69)*0.005, lwd = 7, col = "dark grey")
+	        	
+	        		text(stria_score$Start[k] + stria_score$Dur[k]*0.5,
+	             		y+(12*log2(stria_score$Freq[k]/440)+69)*0.005,
+	             		labels = paste(round(stria_score$Dur[k], 0), "s"), cex = 1, col = "white")
+	             	}
+	         if (!is.na(stria_score$clustDurOnly[k])) {
+	         	    segments(stria_score$Start[k] + (stria_score$clustDurOnly[k]/2 - 0.8), # gray background for event duration text
+	        			y+(12*log2(stria_score$Freq[k]/440)-10)*0.005, 
+	        			stria_score$Start[k] + (stria_score$clustDurOnly[k]/2 + 0.8), 
+	        			y+(12*log2(stria_score$Freq[k]/440)-10)*0.005, lwd = 7, col = "dark grey")
+	        	
+	        		text(stria_score$Start[k] + stria_score$clustDurOnly[k]*0.5,
+	             		y+(12*log2(stria_score$Freq[k]/440)-10)*0.005,
+	             		labels = paste(round(stria_score$clustDurOnly[k], 0), "s"), cex = 1, col = "white")
+	         		}
 	             } else { # mark events in cluster
-	             	segments(stria_score$Start[k], y+1+stria_score$Freq[k]*0.0001, stria_score$End[k], y+1+stria_score$Freq[k]*0.0001, col = "red") #
+	             	#segments(stria_score$Start[k-1], y, stria_score$End[k-1], y, col = "grey") # previous is first element in cluster to mark
+	             	#segments(stria_score$Start[k], y, stria_score$End[k], y, col = "grey") # cluster elements (get double drawn)
 	             }
-	        text(stria_score$Start[k] + stria_score$Dur[k]*0.5,
-	             y+1+(12*log2(stria_score$Freq[k]/440)+69)*0.005,
-	             labels = paste(round(stria_score$Dur[k], 0), "s"), cex = 1.5, col = "white")
+
       }
     }
+        
 }
 
 
 drawpage <- function (nr,beg, end)
 {
-    par(mfcol=c(1,1), mai = c(0.7, 1, 0, 0.4), omi = c(0.2, 0, 0.5, 0), cex = 0.5) # papiergröße
-  plotter(beg, end)
-  mtext("Stria by John Chowning Performancescore",                     # Add Titel manually
-        side = 3,
-        line = 2,
-        cex = 0.5
-        )
-  mtext(nr,                     # Add Pagenumber manually
-        side = 3,
-        line = 2,
-        cex = 0.5,
-        adj=1
-        )
-  for (fader_CC in 0:7){
-  	drawfader(fader_CC)
+  par(mfcol=c(8,1), mai = c(0, 1, 0, 0.4), omi = c(0.5, 0, 0.5, 0), cex = 0.5) # page setup
+  #plot(c(1:100))
+  #plotter(beg, end)
+  for (fader_CC in 7:0){
+  	drawfader(fader_CC, beg, end)
     }
+   #mtext("'Stria' by John Chowning: A Performance Score", side = 3, line = 55, cex = 0.5)  # Add Titel
+   mtext(nr, side = 3, line = 55, cex = 0.5, adj=1)  # Add Pagenumber
+   mtext("        Faders", line = -15, cex = 0.75, outer = TRUE, adj = 0)
+   mtext("        Player 1", line = -16, cex = 0.75, outer = TRUE, adj = 0)
+   mtext("        Faders", line = -45, cex = 0.75, outer = TRUE, adj = 0)
+   mtext("        Player 2", line = -46, cex = 0.75, outer = TRUE, adj = 0)
+
+rect(100, 400, 125, 450, col = "green", border = "blue") # coloured
 
 }
 
-# while debugging Export goes to Desktop
-pdf("~/Desktop/Stria_ahnew_v1.pdf", width = 10.0, height = 7,
-    onefile = TRUE, encoding = "TeXtext.enc")
+if (exportScorePDF){
+	# while debugging Export goes to Desktop
+	currentDate <- Sys.Date()
+	scoreName <- paste("Stria_Score_", currentDate, ".pdf", sep="")
+	pdf(scoreName, width = 10.0, height = 7, onefile = TRUE, encoding = "TeXtext.enc")
+	drawpage(1, 0, 95)
+	drawpage(2, 95, 190)
+	drawpage(3, 190, 285)
+	drawpage(4, 285, 380)
+	drawpage(5, 380, 475)
+	drawpage(6, 475, 570)
+	drawpage(7, 570, 665)
+	drawpage(8, 665, 760)
+	drawpage(9, 760, 855)
+	drawpage(10, 855, 950)
+	dev.off()
+}
 
 
-drawpage(1, 0, 95)
-drawpage(2, 95, 190)
-drawpage(3, 190, 285)
-drawpage(4, 285, 380)
-drawpage(5, 380, 475)
-drawpage(6, 475, 570)
-drawpage(7, 570, 665)
-drawpage(8, 665, 760)
-drawpage(9, 760, 855)
-drawpage(10, 855, 950)
+
+#######
+#    **** Generate Csound MidiTester Score. ****
+# For Stria_MidiTester.csd a score with 5 p-fields is required.
+#
+#stria_tester_score$instrNr <- "i1"
+#stria_tester_score$clustStart
+#stria_tester_score$clustDur
+#stria_tester_score$MidiCh
+#stria_tester_score$MidiCC
+
+stria_tester_score <- data.frame()
 
 
-dev.off()
+
+# format output
+stria_score$MidiCh <- 1
+stria_score$instrNr <- 'i1'
+stria_tester_score<- stria_score[!is.na(stria_score$clustDur), c("instrNr", "Start", "clustDur", "MidiCh", "MidiFaderCC", "Event_num")]
+write.table(stria_tester_score, "../Csound_MidiTester/stria_midiCC.sco", sep = " ", dec = ".", row.names = FALSE, col.names = FALSE, quote =FALSE) # save score
