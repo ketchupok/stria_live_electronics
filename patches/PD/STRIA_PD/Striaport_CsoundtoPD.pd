@@ -1,6 +1,6 @@
-#N canvas 623 105 733 967 12;
+#N canvas 589 103 733 967 12;
 #X text 333 66 DSP on/off;
-#X obj 305 71 tgl 17 0 empty empty empty 17 7 0 10 #dfdfdf #000000 #000000 0 1;
+#X obj 304 73 tgl 17 0 empty empty empty 17 7 0 10 #dfdfdf #000000 #000000 0 1;
 #X msg 291 115 \; pd dsp \$1;
 #X obj 291 535 dac~ 1 2 3 4;
 #X obj 21 63 functions;
@@ -973,7 +973,6 @@
 #X obj 412 530 datetime_recorder;
 #X obj 372 124 t f f, f 33;
 #X obj 291 227 clone engine 260;
-#X text 261 712;
 #X text 19 24 STRIA BY JOHN CHOWNING FADERVERSION developed by Dustin Zorn. This patch was developed within the PEEK project "Études for live-electonics", f 77;
 #N canvas 361 99 1235 570 Player 0;
 #X obj 107 130 vsl 19 162 0 16383 0 0 empty empty empty 0 -9 0 12 #fcfcfc #000000 #000000 0 1;
@@ -1117,6 +1116,7 @@
 #X connect 34 0 0 0;
 #X coords 0 -1 1 1 255 215 1 100 100;
 #X restore 19 360 pd Player 2;
+#X text 10 723 \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; Stria \; \; \; by John Chowning \; \; \; This code is based on the Reconstruction - ORChestra csound code \; \; \; (https://github.com/TheSoundOfAIOSR/csound-web/blob/main/stria.csd) \; \; \; by Kevin Dahan 2007-20010 \; \; \; kevin.dahan@wanadoo.fr \; \; \; translated to PD for live-performance by Dustin Zorn \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \; \;;
 #X connect 1 0 2 0;
 #X connect 1 0 21 0;
 #X connect 5 0 10 0;

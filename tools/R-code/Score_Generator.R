@@ -35,6 +35,51 @@ for (k in stria_score$Event_num) { # k event number, that refers to the line in 
 	}
 }
 
+# calculate Cluster duration
+clustCount = 0
+stria_score$clustNum <- NA
+stria_score$fullClust <- stria_score$isCluster
+
+# mark complete Cluster (also with first event)
+for (i in stria_score$Event_num) {
+	if (stria_score$isCluster[i] == TRUE) {
+		stria_score$clustNum[i] <- clustCount
+		stria_score$clustNum[i-1] <- clustCount
+		stria_score$fullClust[i-1] <- TRUE
+		}
+	else {
+		clustCount = clustCount + 1
+		stria_score$clustNum[i] <- clustCount
+
+		}
+}
+
+# calc maxEnd pro clustNum, as earlier events can be longer than last event.
+	stria_score$clustNumF <- as.factor(stria_score$clustNum)
+	clustEnds <- by(stria_score$End, stria_score$clustNumF,  FUN=max)
+
+# calc cluster End
+for (i in stria_score$Event_num) {
+	stria_score$clustEnd[i] <- clustEnds[stria_score$clustNum[i]]
+	}
+
+# calc cluster duration, from first event to End of Cluster
+stria_score$clustDur <- NA
+for (i in stria_score$Event_num) {
+	if (stria_score$isCluster[i] == FALSE) {
+			stria_score$clustDur[i] <- stria_score$clustEnd[i] - stria_score$Start[i]
+	}
+}
+
+# for plotting in score, make list with only cluster durations
+stria_score$clustDurOnly <- NA
+for (i in stria_score$Event_num) {
+	if (stria_score$fullClust[i] == TRUE) {
+			stria_score$clustDurOnly[i] <-  stria_score$clustDur[i]
+	}
+}
+
+
 #    **** Export fader assignment lists for PD. ****
 #
 
@@ -56,6 +101,7 @@ if (exportPD){
 		lapply(lines_in_txt, cat, "; \n", file=paste("../../patches/PD/STRIA_PD/faderAssigns/fader",fader_CC,".txt", sep=""), append=TRUE) # write line by line
 	}
 }
+
 
 #    **** Create Performance Score as pdf. ****
 #
@@ -129,19 +175,42 @@ box(lty = 'dashed', col = 'grey')
         	stria_score$End[k], stria_score$Amp[k]*Amp_scale_fact,
         	y+(12*log2(stria_score$Freq[k]/440)+69)*0.005,
         	col_r)
-       if(!stria_score$isCluster[k]) { # event is in cluster, omit event number
+       if(!stria_score$isCluster[k]) { # event is not in cluster, print event number
 	        text(stria_score$Start[k]-number_distance,
 	             y+(12*log2(stria_score$Freq[k]/440)+69)*0.005,
 	             labels = k, cex = 1.5)
+	        #text(stria_score$Start[k] + stria_score$Dur[k]*0.5,		# event length
+	        #     y+(12*log2(stria_score$Freq[k]/440)+69)*0.005,
+	        #     labels = paste(round(stria_score$Dur[k], 0), "s"), cex = 1.5, col = "white")
+	        
+	        if (!stria_score$isCluster[k%%383+1]) {			# also dont label the first event of a cluster with time information
+	        		segments(stria_score$Start[k] + (stria_score$Dur[k]/2 - 0.8), # gray background for event duration text
+	        			y+(12*log2(stria_score$Freq[k]/440)+69)*0.005, 
+	        			stria_score$Start[k] + (stria_score$Dur[k]/2 + 0.8), 
+	        			y+(12*log2(stria_score$Freq[k]/440)+69)*0.005, lwd = 7, col = "dark grey")
+	        	
+	        		text(stria_score$Start[k] + stria_score$Dur[k]*0.5,
+	             		y+(12*log2(stria_score$Freq[k]/440)+69)*0.005,
+	             		labels = paste(round(stria_score$Dur[k], 0), "s"), cex = 1, col = "white")
+	             	}
+	         if (!is.na(stria_score$clustDurOnly[k])) {
+	         	    segments(stria_score$Start[k] + (stria_score$clustDurOnly[k]/2 - 0.8), # gray background for event duration text
+	        			y+(12*log2(stria_score$Freq[k]/440)-10)*0.005, 
+	        			stria_score$Start[k] + (stria_score$clustDurOnly[k]/2 + 0.8), 
+	        			y+(12*log2(stria_score$Freq[k]/440)-10)*0.005, lwd = 7, col = "dark grey")
+	        	
+	        		text(stria_score$Start[k] + stria_score$clustDurOnly[k]*0.5,
+	             		y+(12*log2(stria_score$Freq[k]/440)-10)*0.005,
+	             		labels = paste(round(stria_score$clustDurOnly[k], 0), "s"), cex = 1, col = "white")
+	         		}
 	             } else { # mark events in cluster
-	             	segments(stria_score$Start[k-1], y, stria_score$End[k-1], y, col = "grey") # previous is first element in cluster to mark
-	             	segments(stria_score$Start[k], y, stria_score$End[k], y, col = "grey") # cluster elements (get double drawn)
+	             	#segments(stria_score$Start[k-1], y, stria_score$End[k-1], y, col = "grey") # previous is first element in cluster to mark
+	             	#segments(stria_score$Start[k], y, stria_score$End[k], y, col = "grey") # cluster elements (get double drawn)
 	             }
-	        text(stria_score$Start[k] + stria_score$Dur[k]*0.5,
-	             y+(12*log2(stria_score$Freq[k]/440)+69)*0.005,
-	             labels = paste(round(stria_score$Dur[k], 0), "s"), cex = 1.5, col = "white")
+
       }
     }
+        
 }
 
 
@@ -196,41 +265,7 @@ if (exportScorePDF){
 
 stria_tester_score <- data.frame()
 
-# calculate Cluster duration
-clustCount = 0
-stria_score$clustNum <- NA
-stria_score$fullClust <- stria_score$isCluster
 
-# mark complete Cluster (also with first event)
-for (i in stria_score$Event_num) {
-	if (stria_score$isCluster[i] == TRUE) {
-		stria_score$clustNum[i] <- clustCount
-		stria_score$clustNum[i-1] <- clustCount
-		stria_score$fullClust[i-1] <- TRUE
-		}
-	else {
-		clustCount = clustCount + 1
-		stria_score$clustNum[i] <- clustCount
-
-		}
-}
-
-# calc maxEnd pro clustNum, as earlier events can be longer than last event.
-	stria_score$clustNumF <- as.factor(stria_score$clustNum)
-	clustEnds <- by(stria_score$End, stria_score$clustNumF,  FUN=max)
-
-# calc cluster End
-for (i in stria_score$Event_num) {
-	stria_score$clustEnd[i] <- clustEnds[stria_score$clustNum[i]]
-	}
-
-# calc cluster duration, from first event to End of Cluster
-stria_score$clustDur <- NA
-for (i in stria_score$Event_num) {
-	if (stria_score$isCluster[i] == FALSE) {
-			stria_score$clustDur[i] <- stria_score$clustEnd[i] - stria_score$Start[i]
-	}
-}
 
 # format output
 stria_score$MidiCh <- 1
